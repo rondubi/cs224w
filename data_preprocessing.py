@@ -13,12 +13,14 @@ import sys
 import matplotlib.pyplot as plt
 import transformers
 import torch
+import tqdm
 
 seed = 10
 np.random.seed(seed)
 
 # preprocess subject label and data
 data_path = '/home/project/data/'
+#data_path  = '/Users/shizhehe/dev/la-cosa-nostras/cs224w'
 # mapping of label to directory
 datasets = {'hmdb51': 'hmdb51', 'kinetics700': 'kinetics700', 'ucf101': 'ucf101'}
 img_size = 224
@@ -64,7 +66,7 @@ frames: numpy array of shape (num_frames, img_size, img_size, 3)
 
 # hmdb51 and ucf101 have common formats
 sample_data = {}
-for dataset in ['hmdb51', 'ucf101']:
+for dataset in ['hmdb51']:#, 'ucf101']:
     # first, only get train
     for split in ['train']: #, 'test']:
         classes = [d for d in os.listdir(os.path.join(data_path, datasets[dataset], split))]
@@ -105,7 +107,7 @@ stats_pivot.to_csv('dataset_stats.csv')
 # we embed each of the k samples randomly extracted from the video and concatenate 
 # the embeddings to be used as the final emebedding for the video
 
-from transformers import ViTImageProcessor, ViTForImageClassification
+from transformers import ViTImageProcessor, ViTForImageClassification, ViTModel
 
 # set device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -113,27 +115,23 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model_ckpt = 'google/vit-base-patch16-224'
 # load model
 img_processor = ViTImageProcessor.from_pretrained(model_ckpt)
-model = ViTForImageClassification.from_pretrained(model_ckpt)
+#model = ViTForImageClassification.from_pretrained(model_ckpt)
+model = ViTModel.from_pretrained(model_ckpt)
 
-# embed each sample
-for sample_id in sample_data.keys():
+# embed each sample, tqdm for progress bar
+#for sample_id in sample_data.keys():
+for sample_id in tqdm.tqdm(sample_data.keys()):
     # get frames
     frames = sample_data[sample_id]['frames']
     # embed each frame
-    #frame_embeddings = []
-    #for frame in frames:
-    #    inputs = img_processor(frame, return_tensors="pt")
-    #    outputs = model(**inputs)
-
     image_batch_transformed = torch.stack(
-            [img_processor(frame, return_tensors="pt") for frame in frames]
+            [img_processor(frame, return_tensors="pt")['pixel_values'][0] for frame in frames]
         )
     new_batch = {"pixel_values": image_batch_transformed.to(device)}
     with torch.no_grad():
         embeddings = model(**new_batch).last_hidden_state[:, 0].cpu()
-        sample_data[sample_id]['embeddings'] = np.concatenate(embeddings.numpy())
 
-
+    sample_data[sample_id]['embeddings'] = np.concatenate(embeddings.numpy())
 
 # ------------------------------------
 
