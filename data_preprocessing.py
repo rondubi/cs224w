@@ -11,7 +11,6 @@ import random
 import cv2
 import sys
 import matplotlib.pyplot as plt
-import transformers
 import torch
 import tqdm
 
@@ -19,7 +18,7 @@ seed = 10
 np.random.seed(seed)
 
 # preprocess subject label and data
-data_path = '/home/project/data/'
+data_path = '/mnt/disks/cs224w-data/data/'
 #data_path  = '/Users/shizhehe/dev/la-cosa-nostras/cs224w'
 # mapping of label to directory
 datasets = {'hmdb51': 'hmdb51', 'kinetics700': 'kinetics700', 'ucf101': 'ucf101'}
@@ -66,9 +65,9 @@ frames: numpy array of shape (num_frames, img_size, img_size, 3)
 
 # hmdb51 and ucf101 have common formats
 sample_data = {}
-for dataset in ['hmdb51']:#, 'ucf101']:
+for dataset in ['hmdb51', 'ucf101']:
     # first, only get train
-    for split in ['train']: #, 'test']:
+    for split in ['train', 'test']:
         classes = [d for d in os.listdir(os.path.join(data_path, datasets[dataset], split))]
         classes = [d for d in classes if os.path.isdir(os.path.join(data_path, datasets[dataset], split, d))]
         
