@@ -72,6 +72,7 @@ sample_data = {}
 for dataset in ['hmdb51', 'ucf101']:
     # first, only get train
     for split in ['train', 'test']:
+        print(f'Extracting frames from {dataset} {split}...')
         classes = [d for d in os.listdir(os.path.join(data_path, datasets[dataset], split))]
         classes = [d for d in classes if os.path.isdir(os.path.join(data_path, datasets[dataset], split, d))]
         
@@ -79,7 +80,6 @@ for dataset in ['hmdb51', 'ucf101']:
             print(cls)
             # get all videos in the class
             videos = glob.glob(os.path.join(data_path, datasets[dataset], split, cls, '*.avi'))
-            print(videos)
 
             for video_path in videos:
                 frames, frame_indices = extract_k_frames(video_path, num_frames = 5)
