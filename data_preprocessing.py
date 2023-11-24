@@ -24,6 +24,9 @@ data_path = '/mnt/disks/cs224w-data/data/'
 datasets = {'hmdb51': 'hmdb51', 'kinetics700': 'kinetics700', 'ucf101': 'ucf101'}
 img_size = 224
 
+# verify torch
+print(f'Using torch version: {torch.__version__}')
+
 # ------------------------------------
 
 def preprocess_frame(frame):
@@ -63,6 +66,7 @@ num_frames: number of frames in the video
 frames: numpy array of shape (num_frames, img_size, img_size, 3)
 """
 
+print(f'Extracting frames from videos...')
 # hmdb51 and ucf101 have common formats
 sample_data = {}
 for dataset in ['hmdb51', 'ucf101']:
@@ -110,6 +114,7 @@ from transformers import ViTImageProcessor, ViTForImageClassification, ViTModel
 
 # set device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f'Using device: {device}')
 
 model_ckpt = 'google/vit-base-patch16-224'
 # load model
@@ -117,6 +122,7 @@ img_processor = ViTImageProcessor.from_pretrained(model_ckpt)
 #model = ViTForImageClassification.from_pretrained(model_ckpt)
 model = ViTModel.from_pretrained(model_ckpt)
 
+print(f'Embedding {len(sample_data)} samples...')
 # embed each sample, tqdm for progress bar
 #for sample_id in sample_data.keys():
 for sample_id in tqdm.tqdm(sample_data.keys()):
