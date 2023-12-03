@@ -120,7 +120,7 @@ model_ckpt = 'google/vit-base-patch16-224'
 # load model
 img_processor = ViTImageProcessor.from_pretrained(model_ckpt)
 #model = ViTForImageClassification.from_pretrained(model_ckpt)
-model = ViTModel.from_pretrained(model_ckpt)
+model = ViTModel.from_pretrained(model_ckpt).to(device)
 
 print(f'Embedding {len(sample_data)} samples...')
 # embed each sample, tqdm for progress bar
