@@ -6,7 +6,7 @@ from collections import defaultdict
 import pandas as pd
 import tqdm
 
-LOCAL = False
+LOCAL = True
 top_K = 10
 path =  '/mnt/disks/cs224w-data/data/frames_data.h5' if not LOCAL else 'frames_data_small.h5'
 metavd_path = '/mnt/disks/cs224w-data/data/metavd/metavd_v1.csv' if not LOCAL else 'metavd/metavd_v1.csv'
@@ -58,7 +58,7 @@ def main():
     similarity_matrix = cosine_similarity(embeddings, embeddings)
     similarity_results = defaultdict(dict)
     for i, sample_id in enumerate(tqdm.tqdm(sample_ids)):
-        similar_indices = np.argsort(similarity_matrix[i])[:-top_K-1:-1][1:] # exclude itself!!!
+        similar_indices = np.argsort(similarity_matrix[i])[::-1][1:top_K + 1]
         similarity_results[sample_id]['true_label'] = labels[i]
         similarity_results[sample_id]['pred_labels'] = [label for label in labels[similar_indices]]
         similarity_results[sample_id]['pred_scores'] = similarity_matrix[i][similar_indices]
@@ -70,6 +70,7 @@ def main():
     true_labels = [similarity_results[sample_id]['true_label'] for sample_id in similarity_results]
     pred_labels = [similarity_results[sample_id]['pred_labels'] for sample_id in similarity_results]
 
+    print('---- Accuracy Metrics ----')
     topK_acc = topK_accuracy_all(metavd_df, datasets, true_labels, pred_labels, top_K)
     print(f'Top-{top_K} accuracy: {topK_acc}')
 
@@ -78,7 +79,17 @@ def main():
     
     top_1_acc = topK_accuracy_all(metavd_df, datasets, true_labels, pred_labels, 1)
     print(f'Top-1 accuracy: {top_1_acc}')
-    
+
+    topK_is_a = relation_topK(metavd_df, 'is-a', datasets, true_labels, pred_labels, top_K)
+    print(f'Top-{top_K} is-a: {topK_is_a}')
+    topK_similar = relation_topK(metavd_df, 'similar', datasets, true_labels, pred_labels, top_K)
+    print(f'Top-{top_K} similar: {topK_similar}')
+    topK_equal = relation_topK(metavd_df, 'equal', datasets, true_labels, pred_labels, top_K)
+    print(f'Top-{top_K} equal: {topK_equal}')
+
+    print('---- Ranking Precision Metrics ----')
+    topK_prec = precision_at_k_all(metavd_df, datasets, true_labels, pred_labels, top_K)
+    print(f'Top-{top_K} precision: {topK_prec}')
 
 if __name__ == '__main__':
     main()
