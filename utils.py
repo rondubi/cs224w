@@ -2,6 +2,13 @@ import h5py
 import numpy as np
 from typing import List
 
+# we use this weights to capture the similarity.
+RELATIONSHIP_WEIGHTS = {
+    'is-a': 0.5,
+    'similar': 0.25,
+    'equal': 1.0
+}
+
 # helper function to read h5 file to a dictionary
 def read_h5(file_path):
     sample_data = {}
@@ -20,17 +27,49 @@ def read_h5(file_path):
             }
     return sample_data
 
-def topK_accuracy(true_label : str, pred_labels : List[str], k : int):
-    # pred_labels must be sorted in descending order of confidence!
+def related_labels(metavd_df, label : str, dataset : str, relationship : str):
+    if relationship not in RELATIONSHIP_WEIGHTS:
+        raise ValueError(f'Invalid relationship: {relationship}')
+    relations = []
+    # get all related labels, is-a, similar, equal
+    if relationship == 'is-a':
+        # is-a relations are directed, but we treat them as undirected
+        relations += metavd_df[(metavd_df['from_action_name'] == label) & (metavd_df['from_dataset'] == dataset) & (metavd_df['relation'] == 'is-a')]['to_action_name'].tolist()
+        relations += metavd_df[(metavd_df['to_action_name'] == label) & (metavd_df['to_dataset'] == dataset) & (metavd_df['relation'] == 'is-a')]['from_action_name'].tolist()
+    elif relationship == 'similar':
+        # similar relations are undirected, so we need to check both directions
+        relations += metavd_df[((metavd_df['from_action_name'] == label) & (metavd_df['from_dataset'] == dataset) & (metavd_df['relation'] == 'similar'))]['to_action_name'].tolist()
+        relations += metavd_df[((metavd_df['to_action_name'] == label) & (metavd_df['to_dataset'] == dataset) & (metavd_df['relation'] == 'similar'))]['from_action_name'].tolist()
+    elif relationship == 'equal':
+        # equal relations are undirected, so we need to check both directions
+        relations += metavd_df[((metavd_df['from_action_name'] == label) & (metavd_df['from_dataset'] == dataset) & (metavd_df['relation'] == 'equal'))]['to_action_name'].tolist()
+        relations += metavd_df[((metavd_df['to_action_name'] == label) & (metavd_df['to_dataset'] == dataset) & (metavd_df['relation'] == 'equal'))]['from_action_name'].tolist()
+    else:
+        raise ValueError(f'Invalid relationship: {relationship}')
+    return relations
+
+def topK_accuracy(metavd_df, true_label : str, dataset : str, pred_labels : List[str], k : int):
+    # get all related labels, is-a, similar, equal
+    is_a_labels = related_labels(metavd_df, true_label, dataset, 'is-a')
+    similar_labels = related_labels(metavd_df, true_label, dataset, 'similar')
+    equal_labels = related_labels(metavd_df, true_label, dataset, 'equal')
     if true_label in pred_labels[:k]:
         return 1
+    elif len(equal_labels) > 0 and len(set(equal_labels).intersection(set(pred_labels[:k]))) > 0:
+        return RELATIONSHIP_WEIGHTS['equal']
+    elif len(is_a_labels) > 0 and len(set(is_a_labels).intersection(set(pred_labels[:k]))) > 0:
+        return RELATIONSHIP_WEIGHTS['is-a']
+    elif len(similar_labels) > 0 and len(set(similar_labels).intersection(set(pred_labels[:k]))) > 0:
+        return RELATIONSHIP_WEIGHTS['similar']
     else:
         return 0
     
-def topK_accuracy_all(true_labels : List[str], pred_labels : List[str], k : int):
+def topK_accuracy_all(metavd_df, datasets : List[str], true_labels : List[str], pred_labels : List[List[str]], k : int):
+    # the number of times where the correct label (or weighted related labels) 
+    # is among the top k labels predicted
     correct = 0
     for i in range(len(true_labels)):
-        correct += topK_accuracy(true_labels[i], pred_labels[i], k)
+        correct += topK_accuracy(metavd_df, true_labels[i], datasets[i], pred_labels[i], k)
     return correct / len(true_labels)
 
 def precision_at_k(true_label : str, pred_labels : List[str], k : int):

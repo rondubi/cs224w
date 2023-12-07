@@ -38,6 +38,9 @@ def extract_k_frames(video_path, num_frames = 5):
     cap = cv2.VideoCapture(video_path)
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if total_frames < num_frames:
+        print(f'Video {video_path} has {total_frames} frames, less than {num_frames}.')
+        return None, None
 
     # random frame indices
     random_frame_indices = random.sample(range(total_frames), num_frames)
@@ -83,6 +86,8 @@ for dataset in ['hmdb51', 'ucf101']:
 
             for video_path in videos:
                 frames, frame_indices = extract_k_frames(video_path, num_frames = 5)
+                if frames is None:
+                    continue
                 sample_id = os.path.basename(video_path)
                 # build dict
                 if sample_id not in sample_data:
