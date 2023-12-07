@@ -48,7 +48,7 @@ def related_labels(metavd_df, label : str, dataset : str, relationship : str):
         raise ValueError(f'Invalid relationship: {relationship}')
     return relations
 
-def topK_accuracy(metavd_df, true_label : str, dataset : str, pred_labels : List[str], k : int):
+def topK_accuracy(metavd_df, dataset : str, true_label : str, pred_labels : List[str], k : int):
     # get all related labels, is-a, similar, equal
     is_a_labels = related_labels(metavd_df, true_label, dataset, 'is-a')
     similar_labels = related_labels(metavd_df, true_label, dataset, 'similar')
@@ -69,15 +69,49 @@ def topK_accuracy_all(metavd_df, datasets : List[str], true_labels : List[str], 
     # is among the top k labels predicted
     correct = 0
     for i in range(len(true_labels)):
-        correct += topK_accuracy(metavd_df, true_labels[i], datasets[i], pred_labels[i], k)
+        correct += topK_accuracy(metavd_df, datasets[i], true_labels[i], pred_labels[i], k)
     return correct / len(true_labels)
 
-def precision_at_k(true_label : str, pred_labels : List[str], k : int):
-    # pred_labels must be sorted in descending order of confidence!
-    if true_label in pred_labels[:k]:
-        return 1
-    else:
-        return 0
+def relation_topK(metavd_df, relation : str, datasets : List[str], true_labels : List[str], pred_labels : List[List[str]], k : int):
+    # the average amount of times where a given relation is among the top k labels predicted
+    correct = 0
+    for i in range(len(true_labels)):
+        if relation == 'is-a':
+            correct += topK_accuracy(metavd_df, datasets[i], true_labels[i], pred_labels[i], k) == RELATIONSHIP_WEIGHTS['is-a']
+        elif relation == 'similar':
+            correct += topK_accuracy(metavd_df, datasets[i], true_labels[i], pred_labels[i], k) == RELATIONSHIP_WEIGHTS['similar']
+        elif relation == 'equal':
+            correct += topK_accuracy(metavd_df, datasets[i], true_labels[i], pred_labels[i], k) == RELATIONSHIP_WEIGHTS['equal']
+        else:
+            raise ValueError(f'Invalid relationship: {relation}')
+    return correct / len(true_labels)
+
+def precision_at_k(metavd_df, dataset : str, true_label : str, pred_labels : List[str], k : int):
+    # proportion of relevant items found in top-K recommendations
+    count = 0
+
+    # get all related labels, is-a, similar, equal
+    is_a_labels = related_labels(metavd_df, true_label, dataset, 'is-a')
+    similar_labels = related_labels(metavd_df, true_label, dataset, 'similar')
+    equal_labels = related_labels(metavd_df, true_label, dataset, 'equal')
+
+    for i in range(k):
+        if pred_labels[i] == true_label:
+            count += 1
+        elif pred_labels[i] in equal_labels:
+            count += RELATIONSHIP_WEIGHTS['equal']
+        elif pred_labels[i] in is_a_labels:
+            count += RELATIONSHIP_WEIGHTS['is-a']
+        elif pred_labels[i] in similar_labels:
+            count += RELATIONSHIP_WEIGHTS['similar']
+
+    return count / k
+
+def precision_at_k_all(metavd_df, datasets : List[str], true_labels : List[str], pred_labels : List[List[str]], k : int):
+    count = 0
+    for i in range(len(true_labels)):
+        count += precision_at_k(metavd_df, datasets[i], true_labels[i], pred_labels[i], k)
+    return count / len(true_labels)
 
 def NDCG(true_label : str, pred_labels : List[str], k : int):
     if true_label in pred_labels[:k]:
