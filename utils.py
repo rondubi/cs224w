@@ -1,6 +1,7 @@
 import h5py
 import numpy as np
 from typing import List
+import tqdm
 
 # we use this weights to capture the similarity.
 RELATIONSHIP_WEIGHTS = {
@@ -13,7 +14,8 @@ RELATIONSHIP_WEIGHTS = {
 def read_h5(file_path):
     sample_data = {}
     with h5py.File(file_path, 'r') as f:
-        for sample_id in f.keys():
+        sample_ids = list(f.keys())
+        for sample_id in tqdm.tqdm(sample_ids, desc="Reading HDF5", unit="samples"):
             sample_group = f[sample_id]
             sample_data[sample_id] = {
                 'dataset': sample_group['dataset'][()],
