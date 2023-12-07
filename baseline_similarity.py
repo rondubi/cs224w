@@ -6,7 +6,7 @@ from collections import defaultdict
 import pandas as pd
 import tqdm
 
-LOCAL = True
+LOCAL = False
 top_K = 10
 path =  '/mnt/disks/cs224w-data/data/frames_data.h5' if not LOCAL else 'frames_data_small.h5'
 metavd_path = '/mnt/disks/cs224w-data/data/metavd/metavd_v1.csv' if not LOCAL else 'metavd/metavd_v1.csv'
