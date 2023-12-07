@@ -70,14 +70,14 @@ def topK_accuracy_all(metavd_df, datasets : List[str], true_labels : List[str], 
     # the number of times where the correct label (or weighted related labels) 
     # is among the top k labels predicted
     correct = 0
-    for i in range(len(true_labels)):
+    for i in tqdm.tqdm(range(len(true_labels))):
         correct += topK_accuracy(metavd_df, datasets[i], true_labels[i], pred_labels[i], k)
     return correct / len(true_labels)
 
 def relation_topK(metavd_df, relation : str, datasets : List[str], true_labels : List[str], pred_labels : List[List[str]], k : int):
     # the average amount of times where a given relation is among the top k labels predicted
     correct = 0
-    for i in range(len(true_labels)):
+    for i in tqdm.tqdm(range(len(true_labels))):
         if relation == 'is-a':
             correct += topK_accuracy(metavd_df, datasets[i], true_labels[i], pred_labels[i], k) == RELATIONSHIP_WEIGHTS['is-a']
         elif relation == 'similar':
@@ -111,7 +111,7 @@ def precision_at_k(metavd_df, dataset : str, true_label : str, pred_labels : Lis
 
 def precision_at_k_all(metavd_df, datasets : List[str], true_labels : List[str], pred_labels : List[List[str]], k : int):
     count = 0
-    for i in range(len(true_labels)):
+    for i in tqdm.tqdm(range(len(true_labels))):
         count += precision_at_k(metavd_df, datasets[i], true_labels[i], pred_labels[i], k)
     return count / len(true_labels)
 
