@@ -69,20 +69,39 @@ num_frames: number of frames in the video
 frames: numpy array of shape (num_frames, img_size, img_size, 3)
 """
 
+split = {'hmdb51': ['train', 'test'], 'ucf101': ['train', 'test'], 'kinetics700': ['train', 'test']}
+
 print(f'Extracting frames from videos...')
 # hmdb51 and ucf101 have common formats
 sample_data = {}
-for dataset in ['hmdb51', 'ucf101']:
+for dataset in ['hmdb51', 'ucf101', 'kinetics700']:
     # first, only get train
     for split in ['train', 'test']:
         print(f'Extracting frames from {dataset} {split}...')
-        classes = [d for d in os.listdir(os.path.join(data_path, datasets[dataset], split))]
-        classes = [d for d in classes if os.path.isdir(os.path.join(data_path, datasets[dataset], split, d))]
+        if dataset != 'kinetics700':
+            classes = [d for d in os.listdir(os.path.join(data_path, datasets[dataset], split))]
+            classes = [d for d in classes if os.path.isdir(os.path.join(data_path, datasets[dataset], split, d))]
+        else:
+            classes = [d for d in os.listdir(os.path.join(data_path, split))]
+            classes = [d for d in classes if os.path.isdir(os.path.join(data_path, split, d))]
         
+        # only include classes with connections
+        csv_path = "/mnt/disks/cs224w-data/data/metavd/metavd_v1.csv"
+        used_datasets = list(datasets.keys())
+        df_edges = pd.read_csv(csv_path)
+        df_edges = df_edges[(df_edges['from_dataset'].isin(used_datasets)) & (df_edges['to_dataset'].isin(used_datasets))]
+        used_classes = []
+        used_classes += df_edges[df_edges['from_dataset'] == dataset]['from_action_name'].tolist()
+        used_classes += df_edges[df_edges['to_dataset'] == dataset]['to_action_name'].tolist()
+        used_classes = list(set(used_classes))
+        classes = [cls for cls in classes if cls in used_classes]
+
         for cls in classes:
             print(cls)
             # get all videos in the class
             videos = glob.glob(os.path.join(data_path, datasets[dataset], split, cls, '*.avi'))
+            if dataset == 'kinetics700':
+                videos = glob.glob(os.path.join(data_path, split, cls, '*.mp4'))
 
             for video_path in videos:
                 frames, frame_indices = extract_k_frames(video_path, num_frames = 5)
