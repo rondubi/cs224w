@@ -23,6 +23,7 @@ data_path = '/mnt/disks/cs224w-data/data/'
 # mapping of label to directory
 datasets = {'hmdb51': 'hmdb51', 'kinetics700': 'kinetics700', 'ucf101': 'ucf101'}
 img_size = 224
+num_frames = 4
 
 # verify torch
 print(f'Using torch version: {torch.__version__}')
@@ -84,6 +85,9 @@ for dataset in ['hmdb51', 'ucf101', 'kinetics700']:
         else:
             classes = [d for d in os.listdir(os.path.join(data_path, split))]
             classes = [d for d in classes if os.path.isdir(os.path.join(data_path, split, d))]
+            classes = [cls.replace(' ', '_') for cls in classes]
+            classes = [cls.replace("'", "") for cls in classes]
+            classes = [cls.replace('"', "") for cls in classes]
         
         # only include classes with connections
         csv_path = "/mnt/disks/cs224w-data/data/metavd/metavd_v1.csv"
@@ -95,16 +99,16 @@ for dataset in ['hmdb51', 'ucf101', 'kinetics700']:
         used_classes += df_edges[df_edges['to_dataset'] == dataset]['to_action_name'].tolist()
         used_classes = list(set(used_classes))
         classes = [cls for cls in classes if cls in used_classes]
+        print(f'Classes removed: {set(classes).difference(set(used_classes))}')
 
         for cls in classes:
-            print(cls)
             # get all videos in the class
             videos = glob.glob(os.path.join(data_path, datasets[dataset], split, cls, '*.avi'))
             if dataset == 'kinetics700':
                 videos = glob.glob(os.path.join(data_path, split, cls, '*.mp4'))
 
             for video_path in videos:
-                frames, frame_indices = extract_k_frames(video_path, num_frames = 5)
+                frames, frame_indices = extract_k_frames(video_path, num_frames = num_frames)
                 if frames is None:
                     continue
                 sample_id = os.path.basename(video_path)

@@ -28,7 +28,7 @@ def main():
 
     # only keep relevant data for memory efficiency
     for sample_id in sample_ids:
-        if data_dict[sample_id]['num_frames'] == 5:
+        if data_dict[sample_id]['num_frames'] == 4:
             data_dict[sample_id] = {
                 'label': data_dict[sample_id]['label'].decode('ASCII'),
                 'dataset': data_dict[sample_id]['dataset'].decode('ASCII'),
