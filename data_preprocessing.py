@@ -98,10 +98,12 @@ for dataset in ['hmdb51', 'ucf101', 'kinetics700']:
         used_classes += df_edges[df_edges['from_dataset'] == dataset]['from_action_name'].tolist()
         used_classes += df_edges[df_edges['to_dataset'] == dataset]['to_action_name'].tolist()
         used_classes = list(set(used_classes))
+        unused_classes = set(classes).difference(set(used_classes))
         classes = [cls for cls in classes if cls in used_classes]
-        print(f'Classes removed: {set(classes).difference(set(used_classes))}')
+        print(f'Classes removed: {unused_classes}')
 
         for cls in classes:
+            print(cls)
             # get all videos in the class
             videos = glob.glob(os.path.join(data_path, datasets[dataset], split, cls, '*.avi'))
             if dataset == 'kinetics700':
