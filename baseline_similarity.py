@@ -94,5 +94,8 @@ def main():
     top_5_prec = precision_at_k_all(metavd_df, datasets, true_labels, pred_labels, 5)
     print(f'Top-{5} precision: {top_5_prec}')
 
+    top_3_prec = precision_at_k_all(metavd_df, datasets, true_labels, pred_labels, 3)
+    print(f'Top-{3} precision: {top_3_prec}')
+
 if __name__ == '__main__':
     main()
